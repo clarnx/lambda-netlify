@@ -1,21 +1,21 @@
-use lambda_runtime::{handler_fn, Context, Error};
-use serde_json::Value;
+use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde_json::json;
+use serde_json::Value;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let func = handler_fn(func);
+    let func = service_fn(func);
     lambda_runtime::run(func).await?;
     Ok(())
 }
 
-async fn func(_: Value, _: Context) -> Result<Value, Error> {
+async fn func(event: LambdaEvent<Value>) -> Result<Value, Error> {
     let response = json!({
         "statusCode": 200,
         "headers": {
             "Content-Type": "application/json"
         },
-        "body": serde_json::to_string(&json!({"message": "Hello, world!"})).unwrap(),
+        "body": serde_json::to_string(&json!({"message": event.payload})).unwrap(),
         "isBase64Encoded": false
     });
 
