@@ -1,0 +1,6 @@
+[build]
+functions = "functions"
+
+[[functions]]
+name = "hello-world"
+runtime = "provided.al2"
