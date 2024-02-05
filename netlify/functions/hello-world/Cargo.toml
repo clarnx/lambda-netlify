@@ -1,6 +1,5 @@
-workspace = { members = ["netlify/functions/hello-world"] }
 [package]
-name = "lambda-netlify"
+name = "hello-world"
 version = "0.1.0"
 edition = "2021"
 

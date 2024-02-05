@@ -1,2 +1,2 @@
-[build]
-functions = "src/functions"
+[context.production]
+environment = { NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true" }
