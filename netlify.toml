@@ -1,6 +1,2 @@
 [build]
 functions = "src/functions"
-
-[[functions]]
-name = "hello-world"
-runtime = "provided.al2"
