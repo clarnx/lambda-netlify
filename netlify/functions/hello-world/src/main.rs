@@ -1,6 +1,6 @@
 use lambda_http::{
     http::{Response, StatusCode},
-    run, service_fn, Error, IntoResponse, Request, RequestPayloadExt,
+    run, service_fn, Error, IntoResponse, Request, RequestExt, RequestPayloadExt,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -11,7 +11,9 @@ async fn main() -> Result<(), Error> {
 }
 
 pub async fn function_handler(event: Request) -> Result<impl IntoResponse, Error> {
-    let body = event.payload::<MyPayload>()?;
+    let (parts, body) = event.into_parts();
+
+    let http_path = parts.raw_http_path();
 
     let response = Response::builder()
         .status(StatusCode::OK)
@@ -19,17 +21,12 @@ pub async fn function_handler(event: Request) -> Result<impl IntoResponse, Error
         .body(
             json!({
               "message": "Hello World",
-              "payload": body,
+              "payload": http_path,
+              "body": body
             })
             .to_string(),
         )
         .map_err(Box::new)?;
 
     Ok(response)
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct MyPayload {
-    pub prop1: String,
-    pub prop2: String,
 }
