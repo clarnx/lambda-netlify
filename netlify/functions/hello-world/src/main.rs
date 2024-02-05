@@ -1,4 +1,5 @@
 use lambda_runtime::{service_fn, Error, LambdaEvent};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 
@@ -9,7 +10,12 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn func(event: LambdaEvent<Value>) -> Result<Value, Error> {
+#[derive(Debug, Serialize, Deserialize)]
+struct RequestEvent {
+    hello: String,
+}
+
+async fn func(event: LambdaEvent<RequestEvent>) -> Result<Value, Error> {
     let response = json!({
         "statusCode": 200,
         "headers": {
