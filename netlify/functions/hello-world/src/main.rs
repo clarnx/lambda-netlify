@@ -1,5 +1,6 @@
 use lambda_runtime::{handler_fn, Context, Error};
 use serde_json::Value;
+use serde_json::json;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
