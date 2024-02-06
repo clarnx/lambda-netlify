@@ -1,32 +1,46 @@
-use lambda_http::{
-    http::{Response, StatusCode},
-    run, service_fn, Error, IntoResponse, Request, RequestExt, RequestPayloadExt,
-};
+use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use serde_json::Value;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    run(service_fn(function_handler)).await
+    let func = service_fn(func);
+    lambda_runtime::run(func).await?;
+    Ok(())
 }
 
-pub async fn function_handler(event: Request) -> Result<impl IntoResponse, Error> {
+struct Request {
+    body: String,
+}
+
+async fn func(event: LambdaEvent<Value>) -> Result<Value, Error> {
     let (parts, body) = event.into_parts();
-
-    let http_path = parts.raw_http_path();
-
-    let response = Response::builder()
-        .status(StatusCode::OK)
-        .header("Content-Type", "application/json")
-        .body(
-            json!({
-              "message": "Hello World",
-              "payload": http_path,
-              "body": body
-            })
-            .to_string(),
-        )
-        .map_err(Box::new)?;
+    
+    let response = json!({
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": serde_json::to_string(&json!({"message": "success", "parts": parts, "body": body})).unwrap(),
+        "isBase64Encoded": false
+    });
 
     Ok(response)
 }
+// use lambda_runtime::{service_fn, LambdaEvent, Error};
+// use serde_json::{json, Value};
+
+// #[tokio::main]
+// async fn main() -> Result<(), Error> {
+//     let func = service_fn(func);
+//     lambda_runtime::run(func).await?;
+//     Ok(())
+// }
+
+// async fn func(event: LambdaEvent<Value>) -> Result<Value, Error> {
+//     let (event, _context) = event.into_parts();
+//     let first_name = event["firstName"].as_str().unwrap_or("world");
+
+//     Ok(json!({ "message": format!("Hello, {}!", first_name) }))
+// }
