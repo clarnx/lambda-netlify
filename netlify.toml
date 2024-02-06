@@ -1,7 +1,10 @@
 [context.production]
 environment = { NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true" }
 
+[functions]
+directory = "./netlify/functions"
+
 [[redirects]]
 from = "*"
-to = "/.netlify/functions/home/:splat"
+to = "/.netlify/functions/hello-world/:splat"
 status = 200

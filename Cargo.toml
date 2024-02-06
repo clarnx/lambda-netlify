@@ -1,2 +1,2 @@
 [workspace]
-members = ["netlify/functions/home"]
+members = ["netlify/functions/hello-world"]
