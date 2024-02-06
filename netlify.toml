@@ -8,3 +8,8 @@ directory = "./netlify/functions"
 from = "*"
 to = "/.netlify/functions/hello-world/:splat"
 status = 200
+
+[build]
+  command = "cargo build --target x86_64-unknown-linux-musl --release && cp target/x86_64-unknown-linux-musl/release/* functions/"
+  functions = "functions"
+  publish = "public"
