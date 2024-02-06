@@ -1,2 +1,7 @@
 [context.production]
 environment = { NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true" }
+
+[[redirects]]
+from = "*"
+to = "/.netlify/functions/home/:splat"
+status = 200
