@@ -116,11 +116,13 @@
 //     lambda_runtime::run(service_fn(handler)).await
 // }
 
+use std::collections::HashMap;
+
 use aws_lambda_events::encodings::Body;
 use aws_lambda_events::event::apigw::{ApiGatewayProxyRequest, ApiGatewayProxyResponse};
-use aws_lambda_events::http;
-use http::header::HeaderMap;
+use aws_lambda_events::http::{self, HeaderMap};
 use lambda_runtime::{service_fn, Context, Error, LambdaEvent};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[tokio::main]
@@ -130,9 +132,29 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-pub(crate) async fn my_handler(
-    event: LambdaEvent<Value>,
-) -> Result<ApiGatewayProxyResponse, Error> {
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct RequestPayload {
+    body: Option<Value>,
+    path: Option<String>,
+    headers: Option<HashMap<String, Value>>,
+    #[serde(rename = "httpMethod")]
+    http_method: Option<String>,
+    #[serde(rename = "isBase64Encoded")]
+    is_base64_encoded: bool,
+    #[serde(rename = "multiValueHeaders")]
+    multi_value_headers: Option<HashMap<String, Value>>,
+    #[serde(rename = "queryStringParameters")]
+    query_string_parameters: Option<Value>,
+    #[serde(rename = "rawQuery")]
+    raw_query: Option<String>,
+    #[serde(rename = "rawUrl")]
+    raw_url: Option<String>,
+    #[serde(rename = "requestContext")]
+    request_context: Option<HashMap<String, Value>>,
+    resource: Option<String>,
+}
+
+async fn my_handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
     let request = serde_json::to_string(&event.payload).unwrap();
 
     let resp = ApiGatewayProxyResponse {
