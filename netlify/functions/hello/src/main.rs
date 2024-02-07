@@ -1,6 +1,15 @@
-use aws_lambda_events::{apigw::{ApiGatewayProxyRequest, ApiGatewayProxyResponse}, encodings::Body, http};
+use aws_lambda_events::{
+    apigw::{ApiGatewayProxyRequest as Request, ApiGatewayProxyResponse},
+    encodings::Body,
+    http,
+};
 use http::HeaderMap;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+struct ApiGatewayProxyRequest(Request);
+
 
 async fn handler(
     event: LambdaEvent<ApiGatewayProxyRequest>,
@@ -11,7 +20,7 @@ async fn handler(
         status_code: 200,
         multi_value_headers: headers.clone(),
         is_base64_encoded: false,
-        body: Some(Body::Text(serde_json::to_string(&event.payload.path).unwrap()) ),
+        body: Some(Body::Text(serde_json::to_string(&event.payload).unwrap())),
         headers,
     };
     Ok(resp)
