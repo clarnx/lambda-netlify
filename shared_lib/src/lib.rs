@@ -11,7 +11,7 @@ use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct RequestPayload {
-    pub body: Option<Value>,
+    pub body: Option<String>,
     pub path: Option<String>,
     pub headers: Option<HashMap<String, Value>>,
     #[serde(rename = "httpMethod")]

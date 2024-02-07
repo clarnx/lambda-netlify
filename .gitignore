@@ -2,4 +2,7 @@
 
 # Local Netlify folder
 .netlify
+
 /src_bak/*
+
+/.env
