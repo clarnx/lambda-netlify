@@ -20,7 +20,7 @@ async fn handler(
         status_code: 200,
         multi_value_headers: headers.clone(),
         is_base64_encoded: false,
-        body: Some(Body::Text(serde_json::to_string(&event.payload).unwrap())),
+        body: Some(Body::Text(serde_json::to_string(&event.payload.0.path).unwrap())),
         headers,
     };
     Ok(resp)
