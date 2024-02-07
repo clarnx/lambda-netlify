@@ -59,7 +59,7 @@ impl AppSuccessResponse {
         headers.insert("content-type", "application/json".parse().unwrap());
 
         let status_as_i64: i64 = status_code.as_u16() as i64;
-        dbg!(status_as_i64);
+
         let response_body = ResponseBody {
             status: ResponseStatus::Success,
             message,
