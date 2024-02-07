@@ -33,7 +33,9 @@ pub struct RequestPayload {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ResponseStatus {
+    #[serde(rename = "success")]
     Success,
+    #[serde(rename = "error")]
     Error,
 }
 
