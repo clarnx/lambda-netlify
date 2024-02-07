@@ -77,3 +77,35 @@ impl AppSuccessResponse {
         })
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct AppErrorResponse {}
+
+impl AppErrorResponse {
+    pub fn new(
+        status_code: StatusCode,
+        message: Option<String>,
+        data: Option<Value>,
+    ) -> Result<ApiGatewayProxyResponse, Error> {
+        let mut headers = HeaderMap::new();
+        headers.insert("content-type", "application/json".parse().unwrap());
+
+        let status_as_i64: i64 = status_code.as_u16() as i64;
+
+        let response_body = ResponseBody {
+            status: ResponseStatus::Error,
+            message,
+            data,
+        };
+
+        let response_body_json = serde_json::to_string(&response_body).unwrap_or_default();
+
+        Ok(ApiGatewayProxyResponse {
+            status_code: status_as_i64,
+            multi_value_headers: headers.clone(),
+            headers,
+            body: Some(Body::Text(response_body_json)),
+            is_base64_encoded: false,
+        })
+    }
+}
