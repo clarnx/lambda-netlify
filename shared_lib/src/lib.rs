@@ -1,5 +1,11 @@
 use std::collections::HashMap;
 
+use aws_lambda_events::{
+    apigw::ApiGatewayProxyResponse,
+    encodings::Body,
+    http::{header, response, HeaderMap, StatusCode},
+};
+use lambda_runtime::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -23,4 +29,49 @@ pub struct RequestPayload {
     #[serde(rename = "requestContext")]
     pub request_context: Option<HashMap<String, Value>>,
     pub resource: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ResponseStatus {
+    Success,
+    Error,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseBody {
+    status: ResponseStatus,
+    message: Option<String>,
+    data: Option<Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct AppSuccessResponse {}
+
+impl AppSuccessResponse {
+    pub fn new(
+        status_code: StatusCode,
+        message: Option<String>,
+        data: Option<Value>,
+    ) -> Result<ApiGatewayProxyResponse, Error> {
+        let mut headers = HeaderMap::new();
+        headers.insert("content-type", "application/json".parse().unwrap());
+
+        let parsed_status_code: i64 = status_code.to_string().parse().unwrap();
+
+        let response_body = ResponseBody {
+            status: ResponseStatus::Success,
+            message,
+            data,
+        };
+
+        let response_body_json = serde_json::to_string(&response_body).unwrap_or_default();
+
+        Ok(ApiGatewayProxyResponse {
+            status_code: parsed_status_code,
+            multi_value_headers: headers.clone(),
+            headers,
+            body: Some(Body::Text(response_body_json)),
+            is_base64_encoded: false,
+        })
+    }
 }
