@@ -1,4 +1,4 @@
-use std::env;
+use std::{self, env};
 
 use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
@@ -36,7 +36,8 @@ impl RustCodeExecuteRequestData {
 }
 
 async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
-    let rust_code_execution_url = env::var("RUST_CODE_EXECUTION_URL").expect("Provide a valid url");
+    let rust_code_execution_url = env::var("RUST_CODE_EXECUTION_URL")
+        .unwrap_or_else(|_| env::var("RUST_CODE_EXECUTION_URL").unwrap_or_default());
 
     let path = event.payload.path.unwrap_or_default();
     let http_method = event.payload.http_method.unwrap_or_default().to_uppercase();
@@ -82,6 +83,6 @@ async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyRe
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    dotenv().expect("Error loading env files");
+    dotenv().unwrap_or_default();
     lambda_runtime::run(service_fn(handler)).await
 }
