@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
     encodings::Body,
-    http::{header, response, HeaderMap, StatusCode},
+    http::{HeaderMap, StatusCode},
 };
 use lambda_runtime::Error;
 use serde::{Deserialize, Serialize};
@@ -56,8 +56,8 @@ impl AppSuccessResponse {
         let mut headers = HeaderMap::new();
         headers.insert("content-type", "application/json".parse().unwrap());
 
-        let parsed_status_code: i64 = status_code.to_string().parse().unwrap();
-
+        let status_as_i64: i64 = status_code.as_u16() as i64;
+        dbg!(status_as_i64);
         let response_body = ResponseBody {
             status: ResponseStatus::Success,
             message,
@@ -67,7 +67,7 @@ impl AppSuccessResponse {
         let response_body_json = serde_json::to_string(&response_body).unwrap_or_default();
 
         Ok(ApiGatewayProxyResponse {
-            status_code: parsed_status_code,
+            status_code: status_as_i64,
             multi_value_headers: headers.clone(),
             headers,
             body: Some(Body::Text(response_body_json)),
