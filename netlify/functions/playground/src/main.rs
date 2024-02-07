@@ -1,14 +1,13 @@
-use std::{self, env};
+use std::env;
 
 use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
-    event,
     http::{Method, StatusCode},
 };
 use dotenvy::dotenv;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 use shared_lib::{AppErrorResponse, AppSuccessResponse, RequestPayload};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -36,8 +35,7 @@ impl RustCodeExecuteRequestData {
 }
 
 async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
-    let rust_code_execution_url = env::var("RUST_CODE_EXECUTION_URL")
-        .unwrap_or_else(|_| env::var("RUST_CODE_EXECUTION_URL").unwrap_or_default());
+    let rust_code_execution_url = env::var("RUST_CODE_EXECUTION_URL").unwrap_or_default();
 
     let path = event.payload.path.unwrap_or_default();
     let http_method = event.payload.http_method.unwrap_or_default().to_uppercase();
