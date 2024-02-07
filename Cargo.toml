@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["netlify/functions/playground"]
+members = ["netlify/functions/playground", "shared_lib"]
 
 [workspace.dependencies]
 lambda_runtime = "0.9.1"
