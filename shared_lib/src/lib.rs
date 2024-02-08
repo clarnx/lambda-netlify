@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+pub mod utils;
+
+use std::{collections::HashMap, env};
 
 use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
@@ -55,8 +57,15 @@ impl AppSuccessResponse {
         message: Option<String>,
         data: Option<Value>,
     ) -> Result<ApiGatewayProxyResponse, Error> {
+        let frontend_base_url = env::var("FRONTEND_BASE_URL").unwrap_or_default();
+
         let mut headers = HeaderMap::new();
         headers.insert("content-type", "application/json".parse().unwrap());
+        headers.insert(
+            "Access-Control-Allow-Origin",
+            frontend_base_url.parse().unwrap(),
+        );
+        headers.insert("Access-Control-Allow-Credentials", "true".parse().unwrap());
 
         let status_as_i64: i64 = status_code.as_u16() as i64;
 
@@ -87,8 +96,15 @@ impl AppErrorResponse {
         message: Option<String>,
         data: Option<Value>,
     ) -> Result<ApiGatewayProxyResponse, Error> {
+        let frontend_base_url = env::var("FRONTEND_BASE_URL").unwrap_or_default();
+
         let mut headers = HeaderMap::new();
         headers.insert("content-type", "application/json".parse().unwrap());
+        headers.insert(
+            "Access-Control-Allow-Origin",
+            frontend_base_url.parse().unwrap(),
+        );
+        headers.insert("Access-Control-Allow-Credentials", "true".parse().unwrap());
 
         let status_as_i64: i64 = status_code.as_u16() as i64;
 

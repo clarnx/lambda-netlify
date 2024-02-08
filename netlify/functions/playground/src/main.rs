@@ -6,9 +6,10 @@ use aws_lambda_events::{
 };
 use dotenvy::dotenv;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
+use reqwest;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use shared_lib::{AppErrorResponse, AppSuccessResponse, RequestPayload};
+use serde_json::{to_string, Value};
+use shared_lib::{utils::cors::cors, AppErrorResponse, AppSuccessResponse, RequestPayload};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RequestBody {
@@ -35,10 +36,18 @@ impl RustCodeExecuteRequestData {
 }
 
 async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
-    let rust_code_execution_url = env::var("RUST_CODE_EXECUTION_URL").unwrap_or_default();
-
-    let path = event.payload.path.unwrap_or_default();
     let http_method = event.payload.http_method.unwrap_or_default().to_uppercase();
+    let path = event.payload.path.unwrap_or_default();
+
+    if path != "/api/playground/execute-code" {
+        return AppErrorResponse::new(StatusCode::NOT_FOUND, Some("Not found".to_owned()), None);
+    }
+
+    if http_method == Method::OPTIONS.to_string() {
+        return cors();
+    }
+
+    let rust_code_execution_url = env::var("RUST_CODE_EXECUTION_URL").unwrap_or_default();
 
     let rust_code_from_request = if let Some(json_body) = event.payload.body {
         let body_from_json: RequestBody =
@@ -64,14 +73,15 @@ async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyRe
         .await?;
 
     let data: Value = response.json().await.unwrap();
+    let http_method_to_enum = Method::from_bytes(http_method.as_bytes()).unwrap_or_default();
 
-    match path == "/api/playground/execute-code" && http_method == Method::POST.to_string() {
-        true => AppSuccessResponse::new(
+    match http_method_to_enum {
+        Method::POST => AppSuccessResponse::new(
             StatusCode::OK,
             Some("Request successful".to_owned()),
             Some(data),
         ),
-        false => AppErrorResponse::new(
+        _ => AppErrorResponse::new(
             StatusCode::NOT_ACCEPTABLE,
             Some("Not acceptable".to_owned()),
             None,
