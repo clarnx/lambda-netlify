@@ -2,39 +2,47 @@ use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
     http::{Method, StatusCode},
 };
-use blog::handlers::post_handler::{self, get_featured_post};
+use blog::handlers::post_handler::{get_featured_posts, get_posts};
 use dotenvy::dotenv;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
-use mongodb::{
-    bson::{bson, oid::ObjectId},
-    error::WriteFailure,
-};
+use mongodb::bson::oid::ObjectId;
 use serde::de::Error as SerdeError;
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_json::json;
+
+use serde_json::Value;
 use shared_lib::{
-    database::client::connect_db,
-    models::{
-        post::Post,
-        user::{User, UserRole},
-    },
-    traits::model_traits::ModelTraits,
-    utils::cors::cors,
-    AppErrorResponse, AppSuccessResponse, DataInsertError, RequestPayload,
+    database::client::connect_db, models::post::Post, utils::cors::cors, AppErrorResponse,
+    AppSuccessResponse, RequestPayload,
 };
 
 fn from_str_to_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s: String = Deserialize::deserialize(deserializer)?;
-    s.parse::<bool>().map_err(SerdeError::custom)
+    let s: Result<String, _> = Deserialize::deserialize(deserializer);
+    match s {
+        Ok(s) => s.parse::<bool>().map_err(SerdeError::custom),
+        Err(_) => Ok(false), // default value
+    }
+}
+
+fn from_str_to_i64<'de, D>(deserializer: D) -> Result<i64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Result<String, _> = Deserialize::deserialize(deserializer);
+    match s {
+        Ok(s) => s.parse::<i64>().map_err(SerdeError::custom),
+        Err(_) => Ok(1), // default value
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 struct RequestPostsQueryParams {
-    #[serde(deserialize_with = "from_str_to_bool")]
+    #[serde(default, deserialize_with = "from_str_to_bool")]
     featured: bool,
+    #[serde(default, deserialize_with = "from_str_to_i64")]
+    current_page: i64,
 }
 
 async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
@@ -50,12 +58,15 @@ async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyRe
     if http_method == Method::OPTIONS.to_string() {
         return cors();
     }
-
+    // dbg!(event.payload.query_string_parameters.clone());
     let request_post_query_params =
         if let Some(query_params) = event.payload.query_string_parameters {
             serde_json::from_value::<RequestPostsQueryParams>(query_params).unwrap_or_default()
         } else {
-            RequestPostsQueryParams { featured: false }
+            RequestPostsQueryParams {
+                featured: false,
+                ..Default::default()
+            }
         };
 
     // Get Posts
@@ -78,9 +89,11 @@ async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyRe
     match http_method_to_enum {
         Method::GET => {
             if request_post_query_params.featured == true {
-                return get_featured_post(&database).await;
+                return get_featured_posts(&database).await;
             }
-            post_handler::add_post(&database, new_post).await
+            // post_handler::add_post(&database, new_post).await
+            return get_posts(&database, Some(request_post_query_params.current_page)).await;
+            // dbg!(request_post_query_params.current_page);
             // AppSuccessResponse::new(StatusCode::OK, Some("Request successful".to_owned()), None)
         }
         _ => AppErrorResponse::new(
