@@ -1,13 +1,16 @@
+pub mod database;
+pub mod models;
+pub mod traits;
 pub mod utils;
 
-use std::{collections::HashMap, env};
+use std::{clone, collections::HashMap, env, ops::Deref};
 
 use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
     encodings::Body,
     http::{HeaderMap, StatusCode},
 };
-use lambda_runtime::Error;
+use lambda_runtime::{tower::util::error, Error};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -125,3 +128,44 @@ impl AppErrorResponse {
         })
     }
 }
+
+#[derive(Debug)]
+pub enum DataInsertError {
+    FieldValidationError(validator::ValidationErrors),
+    MongoDuplicateError(mongodb::error::WriteError),
+    MongoWriteError(mongodb::error::WriteError),
+    OtherMongoError(mongodb::error::Error),
+}
+
+impl From<validator::ValidationErrors> for DataInsertError {
+    fn from(error: validator::ValidationErrors) -> Self {
+        Self::FieldValidationError(error)
+    }
+}
+
+impl From<mongodb::error::Error> for DataInsertError {
+    fn from(error: mongodb::error::Error) -> Self {
+        match error.kind.as_ref() {
+            mongodb::error::ErrorKind::Write(mongodb::error::WriteFailure::WriteError(error)) => {
+                if error.code == 11000 {
+                    Self::MongoDuplicateError(error.clone())
+                } else {
+                    Self::MongoWriteError(error.clone())
+                }
+            }
+
+            _ => Self::OtherMongoError(error),
+        }
+    }
+}
+
+// impl From<mongodb::error::Error> for DataInsertError {
+//     fn from(error: mongodb::error::Error) -> Self {
+//         match error.kind.as_ref() {
+//             mongodb::error::ErrorKind::Write(mongodb::error::WriteFailure::WriteError(
+//                 write_error,
+//             )) if write_error.code == 11000 => Self::MongoDuplicateError(error),
+//             _ => Self::OtherMongoErrors(error),
+//         }
+//     }
+// }
