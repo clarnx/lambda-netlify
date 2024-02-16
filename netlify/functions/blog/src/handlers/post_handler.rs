@@ -58,7 +58,46 @@ pub async fn add_post(
     };
 }
 
-pub async fn get_featured_post(database: &Database) -> Result<ApiGatewayProxyResponse, Error> {
+pub async fn get_posts(
+    database: &Database,
+    current_page: Option<i64>,
+) -> Result<ApiGatewayProxyResponse, Error> {
+    let post_response = Post::find_paginated(
+        &database,
+        doc! {"is_published": true},
+        Some(doc! {"title": true, "slug": true, "tags": true, "created_at": true, "_id": false}),
+        Some(doc! { "updated_at": -1 }),
+        current_page,
+        Some(4),
+    )
+    .await;
+
+    match post_response {
+        Ok(paginated_posts_data) => {
+            let posts = paginated_posts_data.documents;
+            let pagination_metadata = paginated_posts_data.metadata;
+
+            AppSuccessResponse::new(
+                StatusCode::OK,
+                Some("Request successful".to_string()),
+                Some(json!({
+                    "posts": posts,
+                    "metadata": {
+                        "pagination": pagination_metadata
+                    }
+                })),
+            )
+        }
+
+        Err(_) => AppSuccessResponse::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Some("An error occured fetching data".to_string()),
+            None,
+        ),
+    }
+}
+
+pub async fn get_featured_posts(database: &Database) -> Result<ApiGatewayProxyResponse, Error> {
     let featured_post_response = Post::find(
         &database,
         doc! {"is_featured": true, "is_published": true},
