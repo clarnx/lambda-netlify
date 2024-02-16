@@ -11,6 +11,7 @@ use aws_lambda_events::{
     http::{HeaderMap, StatusCode},
 };
 use lambda_runtime::{tower::util::error, Error};
+use mongodb::bson::Document;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -34,6 +35,20 @@ pub struct RequestPayload {
     #[serde(rename = "requestContext")]
     pub request_context: Option<HashMap<String, Value>>,
     pub resource: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct PaginationMetadata {
+    current_page: Option<u64>,
+    total_pages: Option<u64>,
+    total_items: Option<u64>,
+    items_per_page: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct PaginatedData {
+    pub documents: Vec<Document>,
+    pub metadata: PaginationMetadata,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
