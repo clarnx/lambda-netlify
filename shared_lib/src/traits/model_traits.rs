@@ -1,13 +1,10 @@
-use std::error::Error;
-
 use mongodb::{
     bson::{document, Document},
     results::InsertOneResult,
-    Cursor, Database,
+    Database,
 };
-use serde_json::Value;
 
-use crate::DataInsertError;
+use crate::{DataInsertError, PaginatedData};
 
 pub trait ModelTraits {
     fn save(
@@ -22,6 +19,15 @@ pub trait ModelTraits {
         sort: Option<document::Document>,
         limit: i64,
     ) -> impl std::future::Future<Output = mongodb::error::Result<Vec<Document>>> + Send;
+
+    fn find_paginated(
+        database: &Database,
+        filter: document::Document,
+        projection: Option<document::Document>,
+        sort: Option<document::Document>,
+        current_page: Option<i64>,
+        items_per_page: Option<i64>,
+    ) -> impl std::future::Future<Output = mongodb::error::Result<PaginatedData>> + Send;
 
     fn set_unique_fields(
         database: &Database,
