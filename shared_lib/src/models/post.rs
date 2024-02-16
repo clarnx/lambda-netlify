@@ -7,10 +7,10 @@ use mongodb::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::error::Error;
-use validator::Validate;
+use std::{default, error::Error};
+use validator::{HasLen, Validate};
 
-use crate::{traits::model_traits::ModelTraits, DataInsertError};
+use crate::{traits::model_traits::ModelTraits, DataInsertError, PaginatedData, PaginationMetadata};
 use futures_util::stream::StreamExt;
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
@@ -45,6 +45,7 @@ pub struct UniquePostFields {
     title: bool,
     slug: bool,
 }
+
 
 impl ModelTraits for Post {
     fn get_struct_name_as_plural_string() -> String {
@@ -122,6 +123,81 @@ impl ModelTraits for Post {
         }
 
         Ok(documents)
+    }
+
+    async fn find_paginated(
+        database: &Database,
+        filter: document::Document,
+        projection: Option<document::Document>,
+        sort: Option<document::Document>,
+        current_page: Option<i64>,
+        items_per_page: Option<i64>,
+    ) -> mongodb::error::Result<PaginatedData> {
+        let collection_name = Self::get_struct_name_as_plural_string();
+
+        let current_page = if let Some(page_no) = current_page {
+            if page_no < 1 {
+                1
+            } else {
+                page_no
+            }
+        } else {
+            1
+        };
+
+        let items_per_page = if let Some(items_per_page_no) = items_per_page {
+            if items_per_page_no < 1 {
+                1
+            } else {
+                items_per_page_no
+            }
+        } else {
+            10
+        };
+
+        let total_items = database
+            .collection::<Self>(&collection_name)
+            .count_documents(filter.clone(), None)
+            .await?;
+
+        let total_pages = (total_items as f64 / items_per_page as f64).ceil() as u64;
+
+        let find_options = FindOptions::builder()
+            .projection(projection)
+            .sort(sort)
+            .limit(Some(items_per_page))
+            .skip(Some((current_page as u64 - 1) * items_per_page as u64))
+            .build();
+
+        let mut database_find_cursor = database
+            .collection(&collection_name)
+            .find(filter, find_options)
+            .await?;
+
+        let mut paginated_posts_data = PaginatedData {
+            documents: Vec::new(),
+            metadata: PaginationMetadata {
+                ..Default::default()
+            },
+        };
+
+        while let Some(result) = database_find_cursor.next().await {
+            match result {
+                Ok(document) => paginated_posts_data.documents.push(document),
+                Err(_) => (),
+            }
+        }
+
+        if paginated_posts_data.documents.length() < 1 {
+            return Ok(paginated_posts_data);
+        }
+        paginated_posts_data.metadata = PaginationMetadata {
+            current_page: Some(current_page as u64),
+            total_pages: Some(total_pages),
+            total_items: Some(total_items),
+            items_per_page: Some(items_per_page as u64),
+        };
+        Ok(paginated_posts_data)
     }
 }
 
