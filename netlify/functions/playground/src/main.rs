@@ -1,5 +1,3 @@
-use std::env;
-
 use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
     http::{Method, StatusCode},
@@ -8,8 +6,9 @@ use dotenvy::dotenv;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use reqwest;
 use serde::{Deserialize, Serialize};
-use serde_json::{to_string, Value};
+use serde_json::Value;
 use shared_lib::{utils::cors::cors, AppErrorResponse, AppSuccessResponse, RequestPayload};
+use std::{env, fmt::Debug};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RequestBody {
