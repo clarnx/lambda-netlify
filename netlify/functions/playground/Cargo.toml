@@ -13,4 +13,6 @@ serde_json = { workspace = true }
 tokio = { workspace = true }
 shared_lib = { path = "../../../shared_lib" }
 reqwest = { workspace = true }
-dotenvy = { workspcae = true }
+dotenvy = { workspace = true }
+mongodb = { workspace = true }
+validator = { workspace = true }
