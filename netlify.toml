@@ -4,11 +4,13 @@ environment = { NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true" }
 [functions]
 directory = "./netlify/functions"
 
+
+[[redirects]]
+from = "/api/blog/posts/*"
+to = "/.netlify/functions/blog/:splat"
+status = 200
+
 [[redirects]]
 from = "/api/playground/*"
 to = "/.netlify/functions/playground/:splat"
 status = 200
-
-
-
-
