@@ -1,10 +1,6 @@
 use aws_lambda_events::{apigw::ApiGatewayProxyResponse, http::StatusCode};
 use lambda_runtime::Error;
-use mongodb::{
-    bson::{doc, from_bson, from_document_with_options, DeserializerOptions},
-    Database,
-};
-use serde::{Deserialize, Serialize};
+use mongodb::{bson::doc, Database};
 use serde_json::json;
 use shared_lib::{
     models::post::Post, traits::model_traits::ModelTraits, AppErrorResponse, AppSuccessResponse,
@@ -88,6 +84,35 @@ pub async fn get_posts(
                 })),
             )
         }
+
+        Err(_) => AppSuccessResponse::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Some("An error occured fetching data".to_string()),
+            None,
+        ),
+    }
+}
+
+pub async fn get_post_by_slug(
+    database: &Database,
+    slug: String,
+) -> Result<ApiGatewayProxyResponse, Error> {
+    let post_response = Post::find_one(
+        &database,
+        doc! {"slug": slug, "is_published": true},
+        Some(doc! {"_id": false}),
+        1,
+    )
+    .await;
+
+    match post_response {
+        Ok(document) => AppSuccessResponse::new(
+            StatusCode::OK,
+            Some("Request successful".to_string()),
+            Some(json!({
+                "post": document
+            })),
+        ),
 
         Err(_) => AppSuccessResponse::new(
             StatusCode::INTERNAL_SERVER_ERROR,
