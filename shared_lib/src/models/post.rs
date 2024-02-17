@@ -10,7 +10,9 @@ use serde_json::{json, Value};
 use std::{default, error::Error};
 use validator::{HasLen, Validate};
 
-use crate::{traits::model_traits::ModelTraits, DataInsertError, PaginatedData, PaginationMetadata};
+use crate::{
+    traits::model_traits::ModelTraits, DataInsertError, PaginatedData, PaginationMetadata,
+};
 use futures_util::stream::StreamExt;
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
@@ -46,6 +48,37 @@ pub struct UniquePostFields {
     slug: bool,
 }
 
+impl Post {
+    pub async fn find_one(
+        database: &Database,
+        filter: document::Document,
+        projection: Option<document::Document>,
+        limit: i64,
+    ) -> mongodb::error::Result<Vec<Document>> {
+        let collection_name = Self::get_struct_name_as_plural_string();
+
+        let find_options = FindOptions::builder()
+            .projection(projection)
+            .limit(limit)
+            .build();
+
+        let mut database_find_cursor = database
+            .collection(&collection_name)
+            .find(filter, find_options)
+            .await?;
+
+        let mut documents = Vec::new();
+
+        while let Some(result) = database_find_cursor.next().await {
+            match result {
+                Ok(document) => documents.push(document),
+                Err(_) => (),
+            }
+        }
+
+        Ok(documents)
+    }
+}
 
 impl ModelTraits for Post {
     fn get_struct_name_as_plural_string() -> String {
