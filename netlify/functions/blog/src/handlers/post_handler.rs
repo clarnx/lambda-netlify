@@ -62,7 +62,7 @@ pub async fn get_posts(
         &database,
         doc! {"is_published": true},
         Some(doc! {"title": true, "slug": true, "tags": true, "created_at": true, "_id": false}),
-        Some(doc! { "updated_at": -1 }),
+        Some(doc! { "created_at": -1 }),
         current_page,
         Some(4),
     )
