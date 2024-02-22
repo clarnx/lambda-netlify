@@ -6,6 +6,11 @@ directory = "./netlify/functions"
 
 
 [[redirects]]
+from = "/api/admin/*"
+to = "/.netlify/functions/admin/:splat"
+status = 200
+
+[[redirects]]
 from = "/api/blog/posts/*"
 to = "/.netlify/functions/blog/:splat"
 status = 200
