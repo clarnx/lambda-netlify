@@ -5,7 +5,7 @@ use aws_lambda_events::{
 use dotenvy::dotenv;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde::de::Error as SerdeError;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 
 use serde_json::json;
 use shared_lib::{
@@ -46,7 +46,7 @@ where
 // }
 
 async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
-    let database = connect_db().await?;
+    let _database = connect_db().await?;
 
     let http_method = event.payload.http_method.unwrap_or_default().to_uppercase();
     let path = event.payload.path.unwrap_or_default();
