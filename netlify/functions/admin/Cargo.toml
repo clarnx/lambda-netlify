@@ -15,3 +15,5 @@ shared_lib = { path = "../../../shared_lib" }
 dotenvy = { workspace = true }
 mongodb = { workspace = true }
 validator = { workspace = true }
+bcrypt = { workspace = true }
+cookie = { workspace = true }
