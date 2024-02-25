@@ -15,7 +15,7 @@ use crate::{
 };
 use futures_util::stream::StreamExt;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum UserRole {
     #[serde(rename = "super_admin")]
     SuperAdmin,
@@ -107,7 +107,11 @@ impl ModelTraits for User {
     ) -> mongodb::error::Result<Vec<Document>> {
         let collection_name = Self::get_struct_name_as_plural_string();
 
-        let find_options = FindOptions::builder().build();
+        let find_options = FindOptions::builder()
+            .projection(projection)
+            .sort(sort)
+            .limit(Some(limit))
+            .build();
 
         let mut database_find_cursor = database
             .collection(&collection_name)
