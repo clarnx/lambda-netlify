@@ -2,6 +2,7 @@ use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
     http::{Method, StatusCode},
 };
+use bcrypt::{hash, DEFAULT_COST};
 use dotenvy::dotenv;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde::de::Error as SerdeError;
@@ -58,10 +59,15 @@ async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyRe
             let user_data_json = event.payload.body.unwrap_or_default();
             let user_data: User = serde_json::from_str::<User>(&user_data_json).unwrap_or_default();
 
+            const CUSTOM_DEFAULT_COST: u32 = 14;
+
+            let hashed_password =
+                hash(user_data.password.unwrap_or_default(), CUSTOM_DEFAULT_COST)?;
+
             let new_user_data = User {
                 username: user_data.username,
                 email: user_data.email,
-                password: user_data.password,
+                password: Some(hashed_password),
                 role: user_data.role,
                 ..Default::default()
             };
