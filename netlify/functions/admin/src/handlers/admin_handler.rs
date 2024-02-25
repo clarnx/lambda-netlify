@@ -1,7 +1,14 @@
-use aws_lambda_events::{apigw::ApiGatewayProxyResponse, http::StatusCode};
+use std::env;
+
+use aws_lambda_events::{
+    apigw::ApiGatewayProxyResponse,
+    http::{HeaderValue, StatusCode},
+};
+use bcrypt::verify;
+use cookie::{time::Duration, Cookie, CookieJar, Key};
 use lambda_runtime::Error;
 use mongodb::{
-    bson::{doc, from_document},
+    bson::{doc, from_document, oid::ObjectId},
     Database,
 };
 use serde_json::json;
@@ -13,6 +20,7 @@ use shared_lib::{
     traits::model_traits::ModelTraits,
     AppErrorResponse, AppSuccessResponse, DataInsertError,
 };
+use validator::HasLen;
 
 use crate::UserLoginData;
 
@@ -20,21 +28,31 @@ pub async fn login_admin(
     database: &Database,
     user_login_data: UserLoginData,
 ) -> Result<ApiGatewayProxyResponse, Error> {
+    let cookie_secret = env::var("COOKIE_SECRET").unwrap_or_default();
+
     let username = user_login_data.username.clone().unwrap_or_default();
     let password = user_login_data.password.clone().unwrap_or_default();
 
     let user_from_db_result = User::find(
         database,
-        doc! {"username": username},
-        Some(doc! {"_id": false, "created_at": false, "updated_at": false}),
+        doc! {"username": username.clone()},
+        Some(doc! {"created_at": false, "updated_at": false}),
         None,
         1,
     )
     .await;
 
     match user_from_db_result {
-        Ok(data) => {
-            let db_user: User = from_document::<User>(data[0].clone()).unwrap_or_default();
+        Ok(data_from_db) => {
+            if data_from_db.length() == 0 {
+                return AppErrorResponse::new(
+                    StatusCode::NOT_FOUND,
+                    Some("User not found. Make sure username or password is correct".to_string()),
+                    None,
+                );
+            }
+
+            let db_user: User = from_document::<User>(data_from_db[0].clone()).unwrap_or_default();
 
             if db_user.role.clone().unwrap_or(UserRole::User) != UserRole::Admin {
                 return AppErrorResponse::new(
@@ -44,20 +62,48 @@ pub async fn login_admin(
                 );
             }
 
-            // TODO: Check password match and send cookie after successful login
+            let hashed_password_from_db = db_user.password.clone().unwrap_or_default();
+            let password_is_valid = verify(password, &hashed_password_from_db).unwrap_or_default();
 
-            return AppSuccessResponse::new(
+            if !password_is_valid {
+                return AppErrorResponse::new(
+                    StatusCode::NOT_FOUND,
+                    Some("User not found. Make sure username or password is correct".to_string()),
+                    None,
+                );
+            }
+
+            let key = Key::from(cookie_secret.as_bytes());
+            // Add a private (signed + encrypted) cookie.
+            let mut jar = CookieJar::new();
+            let mut cookie =
+                Cookie::new("sessionToken", db_user.username.clone().unwrap_or_default());
+            cookie.set_http_only(true);
+            cookie.set_max_age(Duration::days(30));
+            jar.private_mut(&key).add(cookie);
+
+            // The cookie's contents are encrypted.
+            let cookie_value = jar.get("sessionToken").unwrap().to_string();
+
+            let mut response = AppSuccessResponse::new(
                 StatusCode::OK,
                 Some("Login successful".to_string()),
-                Some(json!({"username": db_user.username})),
-            );
+                Some(json!({"user": db_user.username})),
+            )
+            .unwrap_or_default();
+
+            response
+                .headers
+                .insert("Set-Cookie", HeaderValue::from_str(&cookie_value).unwrap());
+
+            return Ok(response);
         }
         Err(_) => {
             return AppErrorResponse::new(
                 StatusCode::NOT_FOUND,
-                Some("User not found".to_string()),
+                Some("User not found. Make sure username or password is correct".to_string()),
                 None,
-            )
+            );
         }
     };
 }
