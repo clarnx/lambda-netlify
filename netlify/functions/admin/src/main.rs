@@ -1,3 +1,4 @@
+use admin::{handlers::admin_handler::login_admin, UserLoginData};
 use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
     http::{Method, StatusCode},
@@ -46,7 +47,7 @@ where
 // }
 
 async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
-    let _database = connect_db().await?;
+    let database = connect_db().await?;
 
     let http_method = event.payload.http_method.unwrap_or_default().to_uppercase();
     let path = event.payload.path.unwrap_or_default();
@@ -84,11 +85,29 @@ async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyRe
 
         //     return get_posts(&database, Some(request_post_query_params.current_page)).await;
         // },
-        Method::POST => AppSuccessResponse::new(
-            StatusCode::OK,
-            None,
-            Some(json!(event.payload.body.clone())),
-        ),
+        Method::POST => {
+            let user_login_data_json = event.payload.body.unwrap_or_default();
+            let user_login_data: UserLoginData =
+                serde_json::from_str::<UserLoginData>(&user_login_data_json).unwrap_or_default();
+
+            if let None = user_login_data.username {
+                return AppErrorResponse::new(
+                    StatusCode::BAD_REQUEST,
+                    Some("Username is required".to_owned()),
+                    None,
+                );
+            };
+
+            if let None = user_login_data.password {
+                return AppErrorResponse::new(
+                    StatusCode::BAD_REQUEST,
+                    Some("Password is required".to_owned()),
+                    None,
+                );
+            };
+
+            login_admin(&database, user_login_data).await
+        }
         _ => AppErrorResponse::new(
             StatusCode::NOT_ACCEPTABLE,
             Some("Not acceptable".to_owned()),
