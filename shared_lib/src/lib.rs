@@ -78,7 +78,7 @@ impl AppSuccessResponse {
         let frontend_base_url = env::var("FRONTEND_BASE_URL").unwrap_or_default();
 
         let mut headers = HeaderMap::new();
-        headers.insert("content-type", "application/json".parse().unwrap());
+        headers.insert("Content-Type", "application/json".parse().unwrap());
         headers.insert(
             "Access-Control-Allow-Origin",
             frontend_base_url.parse().unwrap(),
@@ -117,7 +117,7 @@ impl AppErrorResponse {
         let frontend_base_url = env::var("FRONTEND_BASE_URL").unwrap_or_default();
 
         let mut headers = HeaderMap::new();
-        headers.insert("content-type", "application/json".parse().unwrap());
+        headers.insert("Content-Type", "application/json".parse().unwrap());
         headers.insert(
             "Access-Control-Allow-Origin",
             frontend_base_url.parse().unwrap(),
