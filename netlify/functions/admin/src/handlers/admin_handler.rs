@@ -1,11 +1,66 @@
 use aws_lambda_events::{apigw::ApiGatewayProxyResponse, http::StatusCode};
 use lambda_runtime::Error;
-use mongodb::{bson::doc, Database};
+use mongodb::{
+    bson::{doc, from_document},
+    Database,
+};
 use serde_json::json;
 use shared_lib::{
-    models::post::Post, traits::model_traits::ModelTraits, AppErrorResponse, AppSuccessResponse,
-    DataInsertError,
+    models::{
+        post::Post,
+        user::{User, UserRole},
+    },
+    traits::model_traits::ModelTraits,
+    AppErrorResponse, AppSuccessResponse, DataInsertError,
 };
+
+use crate::UserLoginData;
+
+pub async fn login_admin(
+    database: &Database,
+    user_login_data: UserLoginData,
+) -> Result<ApiGatewayProxyResponse, Error> {
+    let username = user_login_data.username.clone().unwrap_or_default();
+    let password = user_login_data.password.clone().unwrap_or_default();
+
+    let user_from_db_result = User::find(
+        database,
+        doc! {"username": username},
+        Some(doc! {"_id": false, "created_at": false, "updated_at": false}),
+        None,
+        1,
+    )
+    .await;
+
+    match user_from_db_result {
+        Ok(data) => {
+            let db_user: User = from_document::<User>(data[0].clone()).unwrap_or_default();
+
+            if db_user.role.clone().unwrap_or(UserRole::User) != UserRole::Admin {
+                return AppErrorResponse::new(
+                    StatusCode::UNAUTHORIZED,
+                    Some("Unauthorized login request".to_string()),
+                    None,
+                );
+            }
+
+            // TODO: Check password match and send cookie after successful login
+
+            return AppSuccessResponse::new(
+                StatusCode::OK,
+                Some("Login successful".to_string()),
+                Some(json!({"username": db_user.username})),
+            );
+        }
+        Err(_) => {
+            return AppErrorResponse::new(
+                StatusCode::NOT_FOUND,
+                Some("User not found".to_string()),
+                None,
+            )
+        }
+    };
+}
 
 pub async fn add_post(
     database: &Database,
