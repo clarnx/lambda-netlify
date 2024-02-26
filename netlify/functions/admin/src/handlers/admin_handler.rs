@@ -79,6 +79,8 @@ pub async fn login_admin(
             let mut cookie =
                 Cookie::new("sessionToken", db_user.username.clone().unwrap_or_default());
             cookie.set_http_only(true);
+            cookie.set_secure(true);
+            cookie.set_path("/");
             cookie.set_max_age(Duration::days(30));
             jar.private_mut(&key).add(cookie);
 
