@@ -1909,6 +1909,7 @@ dependencies = [
  "Inflector",
  "aws_lambda_events",
  "chrono",
+ "cookie",
  "futures-util",
  "lambda_runtime",
  "mongodb",
