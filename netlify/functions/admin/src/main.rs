@@ -1,17 +1,22 @@
+use std::{collections::HashMap, env};
+
 use admin::{handlers::admin_handler::login_admin, UserLoginData};
 use aws_lambda_events::{
     apigw::ApiGatewayProxyResponse,
     http::{Method, StatusCode},
 };
+use cookie::{Cookie, CookieJar, Key};
 use dotenvy::dotenv;
 use lambda_runtime::{service_fn, Error, LambdaEvent};
+use mongodb::change_stream::session;
 use serde::de::Error as SerdeError;
 use serde::{Deserialize, Deserializer};
 
-use serde_json::json;
+use serde_json::{json, Value};
 use shared_lib::{
-    database::client::connect_db, utils::cors::cors, AppErrorResponse, AppSuccessResponse,
-    RequestPayload,
+    database::client::connect_db,
+    utils::{cookie::parse_cookie, cors::cors},
+    AppErrorResponse, AppSuccessResponse, RequestPayload,
 };
 
 fn from_str_to_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -47,6 +52,20 @@ where
 // }
 
 async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
+    let cookie_token = parse_cookie(&event);
+
+    match cookie_token.clone() {
+        Some(token) => return AppSuccessResponse::new(StatusCode::FOUND, Some(token), None),
+        None => "".to_owned(),
+    };
+
+    // let session_token_split: Vec<&str> = cookie.split("=").collect();
+    // let session_token_value = if let Some(session_token_value) = session_token_split.get(1) {
+    //     session_token_value
+    // } else {
+    //     ""
+    // };
+
     let database = connect_db().await?;
 
     let http_method = event.payload.http_method.unwrap_or_default().to_uppercase();
@@ -89,6 +108,13 @@ async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyRe
             let user_login_data_json = event.payload.body.unwrap_or_default();
             let user_login_data: UserLoginData =
                 serde_json::from_str::<UserLoginData>(&user_login_data_json).unwrap_or_default();
+
+            if user_login_data.username.is_none()
+                && user_login_data.password.is_none()
+                && cookie_token.is_none()
+            {
+                return AppErrorResponse::new(StatusCode::UNAUTHORIZED, None, None);
+            };
 
             if let None = user_login_data.username {
                 return AppErrorResponse::new(
