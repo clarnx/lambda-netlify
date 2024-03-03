@@ -29,6 +29,7 @@ pub async fn login_admin(
     user_login_data: UserLoginData,
 ) -> Result<ApiGatewayProxyResponse, Error> {
     let cookie_secret = env::var("COOKIE_SECRET").unwrap_or_default();
+    let cookie_name = env::var("COOKIE_NAME").unwrap_or_default();
 
     let username = user_login_data.username.clone().unwrap_or_default();
     let password = user_login_data.password.clone().unwrap_or_default();
@@ -76,8 +77,10 @@ pub async fn login_admin(
             let key = Key::from(cookie_secret.as_bytes());
             // Add a private (signed + encrypted) cookie.
             let mut jar = CookieJar::new();
-            let mut cookie =
-                Cookie::new("sessionToken", db_user.username.clone().unwrap_or_default());
+            let mut cookie = Cookie::new(
+                cookie_name.clone(),
+                db_user.username.clone().unwrap_or_default(),
+            );
             cookie.set_http_only(true);
             cookie.set_secure(true);
             cookie.set_path("/");
@@ -85,7 +88,7 @@ pub async fn login_admin(
             jar.private_mut(&key).add(cookie);
 
             // The cookie's contents are encrypted.
-            let cookie_value = jar.get("sessionToken").unwrap().to_string();
+            let cookie_value = jar.get(&cookie_name).unwrap().to_string();
 
             let mut response = AppSuccessResponse::new(
                 StatusCode::OK,
