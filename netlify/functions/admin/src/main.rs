@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env};
+use std::{collections::HashMap, env, ops::Deref};
 
 use admin::{handlers::admin_handler::login_admin, UserLoginData};
 use aws_lambda_events::{
@@ -54,9 +54,11 @@ where
 async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyResponse, Error> {
     let cookie_token = parse_cookie(&event);
 
-    match cookie_token.clone() {
-        Some(token) => return AppSuccessResponse::new(StatusCode::FOUND, Some(token), None),
-        None => "".to_owned(),
+    match cookie_token.as_ref() {
+        Some(token) => {
+            return AppSuccessResponse::new(StatusCode::FOUND, Some(token.to_string()), None)
+        }
+        None => (),
     };
 
     // let session_token_split: Vec<&str> = cookie.split("=").collect();
