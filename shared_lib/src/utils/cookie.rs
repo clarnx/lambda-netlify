@@ -3,6 +3,7 @@ use std::{collections::HashMap, env};
 use cookie::{Cookie, CookieJar, Key};
 use lambda_runtime::LambdaEvent;
 use serde_json::Value;
+use validator::HasLen;
 
 use crate::RequestPayload;
 
@@ -33,7 +34,12 @@ pub fn parse_cookie(event: &LambdaEvent<RequestPayload>) -> Option<String> {
                 .get(&cookie_name)
                 .unwrap_or_else(|| Cookie::new("", ""));
             let session_token = cookie.value();
-            return Some(session_token.to_owned());
+
+            if session_token.length() > 0 {
+                return Some(session_token.to_owned());
+            } else {
+                return None;
+            }
         }
         Err(_) => return None,
     }
