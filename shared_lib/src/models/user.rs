@@ -15,21 +15,22 @@ use crate::{
 };
 use futures_util::stream::StreamExt;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone)]
 pub enum UserRole {
     #[serde(rename = "super_admin")]
     SuperAdmin,
     #[serde(rename = "admin")]
     Admin,
+    #[default]
     #[serde(rename = "user")]
     User,
 }
 
-impl Default for UserRole {
-    fn default() -> Self {
-        UserRole::Admin
-    }
-}
+// impl Default for UserRole {
+//     fn default() -> Self {
+//         UserRole::Admin
+//     }
+// }
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 pub struct User {
