@@ -39,10 +39,10 @@ pub struct RequestPayload {
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct PaginationMetadata {
-    current_page: Option<u64>,
-    total_pages: Option<u64>,
-    total_items: Option<u64>,
-    items_per_page: Option<u64>,
+    pub current_page: Option<u64>,
+    pub total_pages: Option<u64>,
+    pub total_items: Option<u64>,
+    pub items_per_page: Option<u64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
