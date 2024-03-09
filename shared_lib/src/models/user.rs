@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{default, error::Error};
 
 use chrono::{DateTime, Utc};
 use inflector::Inflector;
@@ -23,6 +23,12 @@ pub enum UserRole {
     Admin,
     #[serde(rename = "user")]
     User,
+}
+
+impl Default for UserRole {
+    fn default() -> Self {
+        UserRole::Admin
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
@@ -203,6 +209,20 @@ impl ModelTraits for User {
             items_per_page: Some(items_per_page as u64),
         };
         Ok(paginated_users_data)
+    }
+
+    async fn count_documents(
+        database: &Database,
+        filter: document::Document,
+    ) -> mongodb::error::Result<u64> {
+        let collection_name = Self::get_struct_name_as_plural_string();
+
+        let total_items = database
+            .collection::<Self>(&collection_name)
+            .count_documents(filter.clone(), None)
+            .await?;
+
+        Ok(total_items)
     }
 }
 

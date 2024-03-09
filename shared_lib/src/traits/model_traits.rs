@@ -34,4 +34,9 @@ pub trait ModelTraits {
     ) -> impl std::future::Future<Output = Result<(), DataInsertError>> + Send;
 
     fn get_struct_name_as_plural_string() -> String;
+
+    fn count_documents(
+        database: &Database,
+        filter: document::Document,
+    ) -> impl std::future::Future<Output = mongodb::error::Result<u64>> + Send;
 }

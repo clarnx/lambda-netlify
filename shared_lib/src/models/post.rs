@@ -232,6 +232,20 @@ impl ModelTraits for Post {
         };
         Ok(paginated_posts_data)
     }
+
+    async fn count_documents(
+        database: &Database,
+        filter: document::Document,
+    ) -> mongodb::error::Result<u64> {
+        let collection_name = Self::get_struct_name_as_plural_string();
+
+        let total_items = database
+            .collection::<Self>(&collection_name)
+            .count_documents(filter.clone(), None)
+            .await?;
+
+        Ok(total_items)
+    }
 }
 
 impl Default for Post {
