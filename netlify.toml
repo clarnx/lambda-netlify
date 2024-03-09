@@ -11,6 +11,11 @@ to = "/.netlify/functions/admin/:splat"
 status = 200
 
 [[redirects]]
+from = "/api/dashboard/*"
+to = "/.netlify/functions/dashboard/:splat"
+status = 200
+
+[[redirects]]
 from = "/api/user/*"
 to = "/.netlify/functions/user/:splat"
 status = 200
