@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "netlify/functions/admin",
+    "netlify/functions/dashboard",
     "netlify/functions/user",
     "netlify/functions/blog",
     "netlify/functions/playground",

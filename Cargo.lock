@@ -494,6 +494,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "dashboard"
+version = "0.1.0"
+dependencies = [
+ "aws_lambda_events",
+ "bcrypt",
+ "chrono",
+ "cookie",
+ "dotenvy",
+ "lambda_runtime",
+ "mongodb",
+ "serde",
+ "serde_json",
+ "shared_lib",
+ "tokio",
+ "validator",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
