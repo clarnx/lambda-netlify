@@ -19,10 +19,9 @@ use futures_util::stream::StreamExt;
 pub enum UserRole {
     #[serde(rename = "super_admin")]
     SuperAdmin,
-    #[default]
     #[serde(rename = "admin")]
     Admin,
-
+    #[default]
     #[serde(rename = "user")]
     User,
 }
