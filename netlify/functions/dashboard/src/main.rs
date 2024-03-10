@@ -56,8 +56,10 @@ async fn handler(event: LambdaEvent<RequestPayload>) -> Result<ApiGatewayProxyRe
             let user: User = from_document(user).unwrap_or_default();
             let user_role = user.role.unwrap_or_default();
 
-            if user_role != UserRole::Admin || user_role != UserRole::SuperAdmin {
-                return AppErrorResponse::new(StatusCode::UNAUTHORIZED, None, None);
+            match user_role {
+                UserRole::Admin => (),
+                UserRole::SuperAdmin => (),
+                _ => return AppErrorResponse::new(StatusCode::UNAUTHORIZED, None, None),
             }
         }
         None => return AppErrorResponse::new(StatusCode::UNAUTHORIZED, None, None),
