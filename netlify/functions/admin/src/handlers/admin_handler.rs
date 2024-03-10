@@ -48,7 +48,7 @@ pub async fn login_admin(
             if data_from_db.length() == 0 {
                 return AppErrorResponse::new(
                     StatusCode::NOT_FOUND,
-                    Some("User not found. Make sure username or password is correct".to_string()),
+                    Some("Error. Make sure username or password is correct".to_string()),
                     None,
                 );
             }
