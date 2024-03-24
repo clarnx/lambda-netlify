@@ -69,7 +69,7 @@ pub async fn login_admin(
             if !password_is_valid {
                 return AppErrorResponse::new(
                     StatusCode::NOT_FOUND,
-                    Some("User not found. Make sure username or password is correct".to_string()),
+                    Some("Error. Make sure username or password is correct".to_string()),
                     None,
                 );
             }
@@ -106,7 +106,7 @@ pub async fn login_admin(
         Err(_) => {
             return AppErrorResponse::new(
                 StatusCode::NOT_FOUND,
-                Some("User not found. Make sure username or password is correct".to_string()),
+                Some("Error. Make sure username or password is correct".to_string()),
                 None,
             );
         }
